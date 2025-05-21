@@ -1,37 +1,31 @@
 package Server;
+
+import Shared.Message;
+
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import Shared.User;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+/**
+ * The main server class that listens for client connections.
+ */
 public class Server {
-    // Predefined users for authentication
-    private static final User[] users = {
-            new User("user1", "1234"),
-            new User("user2", "1234"),
-            new User("user3", "1234"),
-            new User("user4", "1234"),
-            new User("user5", "1234"),
-    };
+    private static final int PORT = 5050;
+    private static CopyOnWriteArrayList<ClientHandler> clients = new CopyOnWriteArrayList<>();
 
-    // List of currently connected clients
-    public static ArrayList<ClientHandler> clients = new ArrayList<>();
-
-    public static void main(String[] args) throws Exception {
-        // TODO: Create a ServerSocket listening on a port (e.g., 12345)
-
-        // TODO: Accept incoming client connections in a loop
-        //       For each connection:
-        //       - Create a new ClientHandler object
-        //       - Add it to the 'clients' list
-        //       - Start a new thread to handle communication
-    }
-
-    public static boolean authenticate(String username, String password) {
-        for (User user : users) {
-            if (user.getUsername().equals(username) && user.getPassword().equals(password)) {
-                return true;
+    public static void main(String[] args) {
+        System.out.println("Server started on port " + PORT);
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+            while (true) {
+                Socket socket = serverSocket.accept();
+                System.out.println("New client connected: " + socket.getInetAddress());
+                ClientHandler clientHandler = new ClientHandler(socket, clients);
+                clients.add(clientHandler);
+                new Thread(clientHandler).start();
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return false;
     }
 }

@@ -1,62 +1,66 @@
 package Server;
 
-import java.io.IOException;
+import Shared.Message;
+
+import java.io.*;
 import java.net.Socket;
 import java.util.List;
 
+/**
+ * Handles communication with a single client.
+ */
 public class ClientHandler implements Runnable {
     private Socket socket;
-    // TODO: Declare a variable to hold the input stream from the socket
-    // TODO: Declare a variable to hold the output stream from the socket
-    private List<ClientHandler> allClients;
+    private List<ClientHandler> clients;
+    private ObjectOutputStream out;
+    private ObjectInputStream in;
     private String username;
 
-    public ClientHandler() {
-        // TODO: Modify the constructor as needed
+    public ClientHandler(Socket socket, List<ClientHandler> clients) {
+        this.socket = socket;
+        this.clients = clients;
     }
 
-    @Override
     public void run() {
         try {
-            while (true) {
-                // TODO: Read incoming message from the input stream
-                // TODO: Process the message
-            }
-        } catch (Exception e) {
+            out = new ObjectOutputStream(socket.getOutputStream());
+            in = new ObjectInputStream(socket.getInputStream());
 
+            // Read the username
+            Message loginMessage = (Message) in.readObject();
+            this.username = loginMessage.getSender();
+            broadcast(new Message("chat", "Server", username + " has joined the chat.", null));
+
+            Message message;
+            while ((message = (Message) in.readObject()) != null) {
+                if ("chat".equalsIgnoreCase(message.getType())) {
+                    broadcast(message);
+                } else if ("logout".equalsIgnoreCase(message.getType())) {
+                    broadcast(new Message("chat", "Server", username + " has left the chat.", null));
+                    break;
+                }
+                // Handle other message types like file transfer here
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Connection with client " + username + " lost.");
         } finally {
-            //TODO: Update the clients list in Server
+            try {
+                clients.remove(this);
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
-
-    private void sendMessage(String msg){
-        //TODO: send the message (chat) to the client
+    private void broadcast(Message message) {
+        for (ClientHandler client : clients) {
+            try {
+                client.out.writeObject(message);
+                client.out.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
-    private void broadcast(String msg) throws IOException {
-        //TODO: send the message to every other user currently in the chat room
-    }
-
-    private void sendFileList(){
-        // TODO: List all files in the server directory
-        // TODO: Send a message containing file names as a comma-separated string
-    }
-    private void sendFile(String fileName){
-        // TODO: Send file name and size to client
-        // TODO: Send file content as raw bytes
-    }
-    private void receiveFile(String filename, int fileLength)
-    {
-        // TODO: Receive uploaded file content and store it in a byte array
-        // TODO: after the upload is done, save it using saveUploadedFile
-    }
-    private void saveUploadedFile(String filename, byte[] data) throws IOException {
-        // TODO: Save the byte array to a file in the Server's resources folder
-    }
-
-    private void handleLogin(String username, String password) throws IOException, ClassNotFoundException {
-        // TODO: Call Server.authenticate(username, password) to check credentials
-        // TODO: Send success or failure response to the client
-    }
-
 }
