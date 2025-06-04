@@ -1,28 +1,27 @@
 package Shared;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
 
-/**
- * Represents a message exchanged between client and server.
- */
 public class Message implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private String type; // e.g., "chat", "file", "login", "logout"
     private String sender;
     private String content;
-    private LocalDateTime timestamp;
+    private MessageType type;
 
-    public Message(String type, String sender, String content, LocalDateTime timestamp) {
-        this.type = type;
-        this.sender = sender;
-        this.content = content;
-        this.timestamp = timestamp;
+    public enum MessageType {
+        LOGIN,
+        CHAT,
+        UPLOAD,
+        DOWNLOAD,
+        FILE_LIST,
+        SYSTEM
     }
 
-    public String getType() {
-        return type;
+    public Message(String sender, String content, MessageType type) {
+        this.sender = sender;
+        this.content = content;
+        this.type = type;
     }
 
     public String getSender() {
@@ -33,7 +32,7 @@ public class Message implements Serializable {
         return content;
     }
 
-    public LocalDateTime getTimestamp() {
-        return timestamp;
+    public MessageType getType() {
+        return type;
     }
 }
